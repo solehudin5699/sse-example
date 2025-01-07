@@ -1,0 +1,23 @@
+services:
+  fe:
+    container_name: fe
+    image: solehudin5699/alpine:nginx
+    platform: linux/amd64
+    volumes:
+      - ./frontend:/www
+    ports:
+      - 8000:80
+    restart: on-failure
+  be:
+    container_name: be
+    build: backend/
+    platform: linux/amd64
+    ports:
+      - 5001:5001
+    restart: on-failure
+  redis:
+    container_name: redis
+    image: redis:alpine3.21
+    ports:
+      - 6379:6379
+    restart: on-failure
