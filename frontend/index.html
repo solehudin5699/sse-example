@@ -5,9 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <script defer src="./index.js"></script>
+    <style>
+      body {
+        display: grid;
+        place-content: center;
+        min-height: 100vh;
+      }
+      .btn-action {
+        background-color: blue;
+        padding: 8px;
+        border-radius: 4px;
+        height: 44px;
+        min-width: 300px;
+        color: aliceblue;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <button id="loginLogout" onclick="loginLogout()">LOGIN</button>
+    <button class="btn-action" id="loginLogout" onclick="loginLogout()">LOGIN</button>
     <br />
     <br />
     <br />

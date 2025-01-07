@@ -11,8 +11,8 @@ const notificationEmitter = new EventEmitter();
 
 const redisClient = redis.createClient({
   socket: {
-    host: 'redis', // Host Docker ke localhost
-    port: 6379, // Port Redis di container
+    host: 'redis', // Host Docker to localhost
+    port: 6379, // Port Redis in container
   },
 });
 
@@ -25,7 +25,7 @@ redisClient.on('error', (err) => {
   console.error('Redis error:', err);
 });
 
-// Connect ke Redis
+// Connect to Redis
 redisClient.connect();
 
 const otherLogicAsync = () =>
@@ -42,11 +42,11 @@ app.get('/notification/:id', async (req, res) => {
 
   console.log('connect', new Date().toLocaleTimeString());
 
-  // Kirim pesan "ping" untuk menjaga koneksi tetap hidup
+  // send ping to keep connection alive
   res.write('event: ping\n\n');
   await redisClient.set(id, id);
 
-  // Listener untuk notifikasi baru
+  // Listener for new notif
   const onNotification = async (data) => {
     try {
       await otherLogicAsync();
@@ -59,7 +59,6 @@ app.get('/notification/:id', async (req, res) => {
 
   notificationEmitter.on('notification', onNotification);
 
-  // Bersihkan listener saat koneksi ditutup
   req.on('close', async () => {
     notificationEmitter.removeListener('notification', onNotification);
     await redisClient.del(id);
@@ -67,23 +66,34 @@ app.get('/notification/:id', async (req, res) => {
   });
 });
 
-// Endpoint untuk mengirim notifikasi
-app.post('/send-notification', express.json(), (req, res) => {
+app.post('/send-notification', express.json(), async (req, res) => {
   const { title, message, id } = req.body;
 
-  // Emit event notifikasi
-  notificationEmitter.emit('notification', { title, message, timestamp: new Date(), userId: id });
-
-  res.status(200).json({ success: true, message: 'Notification sent' });
+  try {
+    const client = await redisClient.get(`${id}`);
+    if (client) {
+      notificationEmitter.emit('notification', {
+        title,
+        message,
+        timestamp: new Date(),
+        userId: id,
+      });
+      res.status(200).json({ success: true, message: 'Notification sent' });
+    } else {
+      res
+        .status(200)
+        .json({ success: true, message: 'Notification sent, but client not connected' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Notification can not sent' });
+  }
 });
 
-// Endpoint untuk Logout
 app.post('/logout', express.json(), async (req, res) => {
   const { userId } = req.body;
 
-  // Cari koneksi user berdasarkan userId
   try {
-    const client = await redisClient.get(userId);
+    const client = await redisClient.get(`${userId}`);
 
     if (client) {
       await redisClient.del(userId);
